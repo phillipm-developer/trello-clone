@@ -7,6 +7,7 @@ from os import environ
 from dotenv import load_dotenv
 
 from models.user import User, UserSchema
+from models.card import Card, CardSchema
 from init import db, ma, bcrypt, jwt
 
 load_dotenv()
@@ -17,6 +18,12 @@ app = Flask(__name__)
 
 app.config['JWT_SECRET_KEY'] = environ.get('JWT_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = environ.get('DB_URI')
+
+db.init_app(app)
+ma.init_app(app)
+bcrypt.init_app(app)
+jwt.init_app(app)
+
 
 # print(app.config.get('JWT_SECRET_KEY'))
 # print(app.config.get('SQLALCHEMY_DATABASE_URI'))
@@ -36,18 +43,6 @@ def unauthorized(err):
 # print(db.__dict__)
 # print(app.config)
 
-class Card(db.Model):
-    __tablename__ = 'cards'
-
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100))
-    description = db.Column(db.Text())
-    status = db.Column(db.String(30))
-    date_created = db.Column(db.Date())
-
-class CardSchema(ma.Schema):
-    class Meta:
-        fields = ('id', 'title', 'name', 'description', 'status')
 
 @app.cli.command('create')
 def create_db():
