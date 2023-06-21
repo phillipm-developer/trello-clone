@@ -1,40 +1,40 @@
-from flask import Flask, request
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, request, abort
 from datetime import date
-from flask_marshmallow import Marshmallow
-from flask_bcrypt import Bcrypt
 from sqlalchemy.exc import IntegrityError
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from datetime import timedelta
+from os import environ
+from dotenv import load_dotenv
+
+from models.user import User, UserSchema
+from init import db, ma, bcrypt, jwt
+
+load_dotenv()
 
 app = Flask(__name__)
 
 # app.config['JSON_SORT_KEYS'] = False
 
-app.config['JWT_SECRET_KEY'] = 'Ministry of Silly Walks'
+app.config['JWT_SECRET_KEY'] = environ.get('JWT_KEY')
+app.config['SQLALCHEMY_DATABASE_URI'] = environ.get('DB_URI')
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://trello_dev:spameggs123@localhost:5432/trello'
+# print(app.config.get('JWT_SECRET_KEY'))
+# print(app.config.get('SQLALCHEMY_DATABASE_URI'))
 
-db = SQLAlchemy(app)
-ma = Marshmallow(app)
-bcrypt = Bcrypt(app)
-jwt = JWTManager(app)
+
+def admin_required():
+    user_email = get_jwt_identity()
+    stmt = db.select(User).filter_by(email=user_email)
+    user = db.session.scalar(stmt)
+    if not (user and user.is_admin):
+        abort(401)
+
+@app.errorhandler(401)
+def unauthorized(err):
+    return  {'error': 'You must be an admin'}, 401
 
 # print(db.__dict__)
 # print(app.config)
-
-class User(db.Model):
-    __tablename__ = 'users'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    email = db.Column(db.String, nullable=False, unique=True)
-    password = db.Column(db.String, nullable=False)
-    is_admin = db.Column(db.Boolean, default=False)
-
-class UserSchema(ma.Schema):
-    class Meta:
-        fields = ('name', 'email', 'password', 'is_admin')
 
 class Card(db.Model):
     __tablename__ = 'cards'
@@ -146,12 +146,8 @@ def login():
 @app.route('/cards')
 @jwt_required()
 def all_cards():
-    user_email = get_jwt_identity()
-    stmt = db.select(User).filter_by(email=user_email)
-    user = db.session.scalar(stmt)
-    if not user.is_admin:
-        return {'error': 'You must be an admin'}, 401
-    
+    admin_required()
+
     # Select * from cards;
     stmt = db.select(Card).order_by(Card.status.desc())
     cards = db.session.scalars(stmt).all()
