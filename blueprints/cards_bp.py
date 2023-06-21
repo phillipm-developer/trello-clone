@@ -1,13 +1,12 @@
-from flask import Blueprint, request
-from datetime import timedelta
-from models.user import User, UserSchema
+from flask import Blueprint
 from models.card import Card, CardSchema
-from init import db, bcrypt
-from sqlalchemy.exc import IntegrityError
-from flask_jwt_extended import create_access_token
-from datetime import timedelta
+from init import db
+from flask_jwt_extended import jwt_required
+from blueprints.auth_bp import admin_required
 
-@app.route('/cards')
+cards_bp = Blueprint('cards', __name__)
+
+@cards_bp.route('/cards')
 @jwt_required()
 def all_cards():
     admin_required()
