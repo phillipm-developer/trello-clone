@@ -1,4 +1,5 @@
 from init import db, ma
+from marshmallow import fields
 
 class Card(db.Model):
     __tablename__ = 'cards'
@@ -10,8 +11,15 @@ class Card(db.Model):
     date_created = db.Column(db.Date())
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship('User', back_populates='cards')
+
+    comments = db.relationship('Comment', back_populates='card')
 
 class CardSchema(ma.Schema):
+    # Tell marshmallow to use UserSchema to serialize 'user' field
+    user = fields.Nested('UserSchema', exclude=['password', 'cards'])
+    comments = fields.List(fields.Nested('CommentSchema', exclude=['card', 'id']))
+
     class Meta:
-        fields = ('id', 'title', 'description', 'status', 'user_id')
+        fields = ('id', 'title', 'description', 'status', 'user', 'comments')
         ordered=True

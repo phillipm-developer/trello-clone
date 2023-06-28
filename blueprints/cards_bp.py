@@ -1,7 +1,7 @@
 from flask import Blueprint, request, abort
 from models.card import Card, CardSchema
 from init import db
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from blueprints.auth_bp import admin_required
 from datetime import date
 
@@ -50,7 +50,8 @@ def create_card():
         description = card_info['description'],
         status = card_info['status'],
         date_created = date.today(),
-        user_id = card_info['user_id']
+        # user_id = card_info['user_id']
+        user_id = get_jwt_identity()
     )
     # Add and commit the new card to the session
     db.session.add(card)
