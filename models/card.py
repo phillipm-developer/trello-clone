@@ -9,6 +9,9 @@ class Card(db.Model):
     status = db.Column(db.String(30))
     date_created = db.Column(db.Date())
 
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
 class CardSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'title', 'name', 'description', 'status')
+        fields = ('id', 'title', 'description', 'status', 'user_id')
+        ordered=True
